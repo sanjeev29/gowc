@@ -7,35 +7,76 @@ import (
 	"io"
 	"log"
 	"os"
+	"unicode"
 )
 
-func readBytes(file *os.File) int {
-	numberOfBytes := 0
+type fileStats struct {
+	bytes      int
+	lines      int
+	words      int
+	characters int
+}
+
+func getFileStats(file *os.File) fileStats {
+	var numberOfBytes, numberOfLines, numberOfWords, numberOfChars int
 
 	reader := bufio.NewReader(file)
 
+	isWord := false
 	for {
-		_, size, err := reader.ReadRune()
+		r, size, err := reader.ReadRune()
 		if err != nil {
 			if err == io.EOF {
+				if isWord {
+					numberOfWords += 1
+				}
 				break
 			}
 
 			log.Fatalln(err)
 		}
 
+		if unicode.IsSpace(r) {
+			if isWord {
+				numberOfWords += 1
+			}
+
+			if r == '\n' {
+				numberOfLines += 1
+			}
+
+			isWord = false
+		} else {
+			isWord = true
+		}
+
 		numberOfBytes += size
+		numberOfChars += 1
 	}
 
-	return numberOfBytes
+	return fileStats{
+		bytes:      numberOfBytes,
+		lines:      numberOfLines,
+		words:      numberOfWords,
+		characters: numberOfChars,
+	}
 }
 
 func main() {
-	var bytes bool
+	var byteCount, lineCount, wordCount, charCount bool
 
-	flag.BoolVar(&bytes, "c", false, "number of bytes")
+	flag.BoolVar(&byteCount, "c", false, "number of bytes")
+	flag.BoolVar(&lineCount, "l", false, "number of lines")
+	flag.BoolVar(&wordCount, "w", false, "number of words")
+	flag.BoolVar(&charCount, "m", false, "number of characters")
 
 	flag.Parse()
+
+	if !byteCount && !lineCount && !wordCount && !charCount {
+		byteCount = true
+		lineCount = true
+		wordCount = true
+	}
 
 	filename := flag.CommandLine.Arg(0)
 
@@ -53,12 +94,23 @@ func main() {
 	// Close file
 	defer file.Close()
 
-	var numberOfBytes int
+	stats := getFileStats(file)
 
-	if bytes {
-		numberOfBytes = readBytes(file)
+	if lineCount {
+		fmt.Printf("  %d", stats.lines)
 	}
 
-	// Print number of bytes
-	fmt.Printf("  %d %s\n", numberOfBytes, filename)
+	if wordCount {
+		fmt.Printf("  %d", stats.words)
+	}
+
+	if byteCount {
+		fmt.Printf("  %d", stats.bytes)
+	}
+
+	if charCount {
+		fmt.Printf("  %d", stats.characters)
+	}
+
+	fmt.Printf("  %s\n", filename)
 }
