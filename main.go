@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"unicode"
 )
@@ -108,21 +107,21 @@ func main() {
 	printArgs := []string{}
 
 	if lineCount {
-		printArgs = append(printArgs, strconv.Itoa(stats.lines))
+		printArgs = append(printArgs, fmt.Sprintf("%*d", 8, stats.lines))
 	}
 
 	if wordCount {
-		printArgs = append(printArgs, strconv.Itoa(stats.words))
+		printArgs = append(printArgs, fmt.Sprintf("%*d", 8, stats.words))
 	}
 
 	if byteCount {
-		printArgs = append(printArgs, strconv.Itoa(stats.bytes))
+		printArgs = append(printArgs, fmt.Sprintf("%*d", 8, stats.bytes))
 	}
 
 	if charCount {
-		printArgs = append(printArgs, strconv.Itoa(stats.characters))
+		printArgs = append(printArgs, fmt.Sprintf("%*d", 8, stats.characters))
 	}
 
 	printArgs = append(printArgs, filename)
-	fmt.Printf("\t%s\n", strings.Join(printArgs, " "))
+	fmt.Println(strings.Join(printArgs, " "))
 }
