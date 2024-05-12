@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -80,37 +82,47 @@ func main() {
 
 	filename := flag.CommandLine.Arg(0)
 
-	_, err := os.Stat(filename)
+	fileStat, err := os.Stdin.Stat()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Open file
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
+	var file *os.File
 
-	// Close file
-	defer file.Close()
+	if (fileStat.Mode() & os.ModeCharDevice) == 0 {
+		// String is being piped to stdin
+		file = os.Stdin
+	} else {
+		// Open file
+		file, err = os.Open(filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Close file
+		defer file.Close()
+	}
 
 	stats := getFileStats(file)
 
+	printArgs := []string{}
+
 	if lineCount {
-		fmt.Printf("  %d", stats.lines)
+		printArgs = append(printArgs, strconv.Itoa(stats.lines))
 	}
 
 	if wordCount {
-		fmt.Printf("  %d", stats.words)
+		printArgs = append(printArgs, strconv.Itoa(stats.words))
 	}
 
 	if byteCount {
-		fmt.Printf("  %d", stats.bytes)
+		printArgs = append(printArgs, strconv.Itoa(stats.bytes))
 	}
 
 	if charCount {
-		fmt.Printf("  %d", stats.characters)
+		printArgs = append(printArgs, strconv.Itoa(stats.characters))
 	}
 
-	fmt.Printf("  %s\n", filename)
+	printArgs = append(printArgs, filename)
+	fmt.Printf("\t%s\n", strings.Join(printArgs, " "))
 }
